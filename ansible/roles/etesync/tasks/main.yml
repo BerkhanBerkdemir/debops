@@ -123,6 +123,17 @@
   notify: [ 'Restart gunicorn for etesync' ]
   tags: [ 'role::etesync:config' ]
 
+- name: Generate extended EteSync configuration
+  ansible.builtin.template:
+    src: 'usr/local/lib/etesync/app/etesync_site_settings.py.j2'
+    dest: '{{ etesync__git_checkout + "/etebase_server_settings.py" }}'
+    owner: '{{ etesync__user }}'
+    group: '{{ etesync__group }}'
+    mode: '0640'
+  register: etesync__register_config
+  notify: [ 'Restart gunicorn for etesync' ]
+  tags: [ 'role::etesync:config' ]
+
 - name: Generate EteSync secret.txt file
   ansible.builtin.template:
     src: 'etc/etesync-server/secret.txt.j2'
@@ -133,11 +144,21 @@
   notify: [ 'Restart gunicorn for etesync' ]
   tags: [ 'role::etesync:config' ]
 
-## -o nounset can be enabled with virtualenv >= 16.2.
-## Ref: https://github.com/pypa/virtualenv/pull/922
+- name: Collect static files like CSS and JavaScript
+  ansible.builtin.shell: |
+    source {{ etesync__virtualenv }}/bin/activate
+    python manage.py collectstatic --no-input
+  args:  # noqa no-handler
+    chdir: '{{ etesync__git_checkout }}'
+    executable: 'bash'
+  become: True
+  become_user: '{{ etesync__user }}'
+  changed_when: ("0 static files copied to" not in etesync__register_collectstatic.stdout)
+  when: etesync__register_source is changed
+  register: etesync__register_collectstatic
+
 - name: Perform database installation or migration
   ansible.builtin.shell: |
-    set -o pipefail -o errexit;
     source {{ etesync__virtualenv }}/bin/activate
     python manage.py migrate
   args:  # noqa no-handler
