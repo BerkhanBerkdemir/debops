@@ -26,6 +26,17 @@ You can read information about required changes between releases in the
 Added
 ~~~~~
 
+New DebOps roles
+''''''''''''''''
+
+- The :ref:`debops.debconf` Ansible role can be used to pre-configure APT
+  packages which use the `debconf`__ configuration database and install them
+  afterwards. The role is included near the end of the :file:`site.yml`
+  playbook to allow of configuration of other needed services before the actual
+  package installation.
+
+  .. __: https://en.wikipedia.org/wiki/Debian_configuration_system
+
 General
 '''''''
 
@@ -33,13 +44,53 @@ General
   to the :command:`syslog` service. Use the ``--verbose`` or ``-v`` flag to
   enable log output on the console.
 
+- Users can define "playbook sets" on the view level of the "modern" project
+  directories. Playbook sets can be used as aliases to call multiple playbooks
+  using a custom name. See :ref:`playbook_sets` documentation for more details.
+
 Changed
 ~~~~~~~
+
+Updates of upstream application versions
+''''''''''''''''''''''''''''''''''''''''
+
+- In the :ref:`debops.ipxe` role, support for the Debian Bullseye netboot
+  installer has been updated to v11.10; the Debian Bookworm installer has been
+  updated to v12.5.
 
 :ref:`debops.elasticsearch` role
 ''''''''''''''''''''''''''''''''
 
 - The role now supports new Elasticsearch v8.x password management mechanism.
+
+- The role can now manage passwords in separate Elasticsearch clusters defined
+  in one Ansible inventory.
+
+  .. warning:: Due to this change, Elasticsearch passwords stored in the
+               :file:`ansible/secret/` subdirectory will be read from a different
+               location. If passwords are not moved to the new location, role
+               will reset the Elasticsearch built-in users passwords
+               automatically. This might result in data loss.
+
+:ref:`debops.kibana` role
+'''''''''''''''''''''''''
+
+- The path to the password file stored in :file:`ansible/secret/` subdirectory
+  is now configurable using a variable.
+
+- The role uses new per-cluster Elasticsearch passwords by default. This is
+  done using a separate :envvar:`kibana__elasticsearch_cluster_name` variable,
+  which needs to be synchronized with the Elasticsearch configuration via
+  Ansible inventory (Kibana can be installed separately from Elasticsearch).
+
+Removed
+~~~~~~~
+
+:ref:`debops.ipxe` role
+'''''''''''''''''''''''
+
+- Debian 9 (Stretch) has been removed from Debian mirrors, therefore the role
+  will no longer offer support for installing Debian Stretch via PXE boot.
 
 
 `debops v3.1.0`_ - 2023-11-29
