@@ -98,7 +98,7 @@
 
 - name: Make sure either zones or views are defined
   ansible.builtin.assert:
-    that: bind__tmp_top_views | length == 0 or bind__tmp_top_zones | length == 0
+    that: bind__tmp_top_views | length > 0 or bind__tmp_top_zones | length > 0
   tags: [ 'role::bind:config' ]
 
 - name: Assign zones to the default view
