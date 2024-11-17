@@ -38,6 +38,12 @@ New DebOps roles
 
   .. __: https://www.influxdata.com/products/influxdb/
 
+:ref:`debops.core` role
+'''''''''''''''''''''''
+
+- A new local fact, ``ansible_local.core.is_64bits``, can be used to determine
+  if the current system supports 32-bit or 64-bit architecture.
+
 :ref:`debops.dovecot` role
 ''''''''''''''''''''''''''
 
@@ -45,6 +51,23 @@ New DebOps roles
   :command:`doveadm` commands to iterate over all users. Note that you might
   have to adjust the defaults for the :envvar:`dovecot__ldap_user_list_filter`
   variable if you use the :envvar:`dovecot__ldap_user_filter` variable.
+
+:ref:`debops.netbox` role
+'''''''''''''''''''''''''
+
+- Starting with NetBox ``v3.4.9``, anonymized reporting of census data is being
+  enabled by default. DebOps respects this upstream default. You can change it
+  using :envvar:`netbox__config_census_reporting`.
+
+- The role can be used with NetBox deployed in a clustered PostgreSQL setup
+  with primary/standby nodes.
+
+:ref:`debops.nginx` role
+''''''''''''''''''''''''
+
+- Different file templates used in the role can now be overridden by the users
+  with the DebOps template override system and the ``template_src`` lookup
+  plugin.
 
 :ref:`debops.resolved` role
 '''''''''''''''''''''''''''
@@ -58,6 +81,12 @@ New DebOps roles
 
 Changed
 ~~~~~~~
+
+Updates of upstream application versions
+''''''''''''''''''''''''''''''''''''''''
+
+- In the :ref:`debops.netbox` role, the NetBox version has been updated to
+  ``v3.7.2``.
 
 General
 '''''''
@@ -77,6 +106,31 @@ General
 
 - The runner registration method has changed, see the role documentation for
   details.
+
+:ref:`debops.nginx` role
+''''''''''''''''''''''''
+
+- The custom :command:`systemd` override that ensures that the :command:`nginx`
+  service is started after network is available will be installed only on older
+  Debian/Ubuntu releases; it's now the default since Debian Bookworm.
+
+:ref:`debops.rspamd` role
+'''''''''''''''''''''''''
+
+- Due to the `removal`__ of the ``distutils`` Python module from Python v3.12,
+  custom scripts included in the role which create and update DKIM keys have
+  been updated to use the ``shutil`` module instead.
+
+  .. __: https://docs.python.org/3.11/whatsnew/3.10.html#distutils-deprecated
+
+:ref:`debops.snmpd` role
+''''''''''''''''''''''''
+
+- The :file:`snmpd.service` configuration file provided in the role will ensure
+  that the :command:`snmpd` daemon is restarted on failure. Older versions of
+  :command:`snmpd` can `fail due to rapid changes in network interfaces`__.
+
+  .. __: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1023656
 
 Fixed
 ~~~~~
@@ -98,17 +152,64 @@ General
   Collections during new project creation if the :command:`ansible-galaxy`
   command is not available in the user's ``$PATH``.
 
+- The :file:`tools/dist-upgrade.yml` playbook will not fail anymore during
+  :file:`/etc/services` database assembly if no upgrade was performed.
+
 :ref:`debops.apache` role
 '''''''''''''''''''''''''
 
 - Fixed an issue with the vhost ``state: "absent"`` parameter not working
   correctly when the ``enabled: False`` parameter was not set as well.
 
+:ref:`debops.docker_gen` role
+'''''''''''''''''''''''''''''
+
+- Flattened the list of directories that are created by the ``file`` task. This
+  should fix the issue of Ansible stopping during execution due to nested lists
+  in the ``loop`` keyword.
+
 :ref:`debops.dropbear_initramfs` role
 '''''''''''''''''''''''''''''''''''''
 
 - The role now supports both the old and the new location if the initramfs
   configuration files.
+
+:ref:`debops.ferm` role
+'''''''''''''''''''''''
+
+- The role will restart the :command:`fail2ban` service instead of reloading
+  it, which will ensure that the custom rules are re-added when the
+  :command:`ferm` service is restarted.
+
+- Fixed an issue with the role failing if the :envvar:`ferm__parsed_rules`
+  variable is not defined correctly. The role will skip rule generation in such
+  case instead of failing with the "AnsibleUndefined" error message.
+
+:ref:`debops.ifupdown` role
+'''''''''''''''''''''''''''
+
+- The :file:`iface@.service` :command:`systemd` unit provided by the role is
+  changed to use ``After==sys-subsystem-net-devices-%i.device`` parameter. This
+  should ensure that the bridge interfaces are correctly started at boot time.
+
+:ref:`debops.owncloud` role
+'''''''''''''''''''''''''''
+
+- Fixed conditional logic in a task which determines if the "autosetup"
+  operation should be performed during Nextcloud/ownCloud installation.
+
+:ref:`debops.postgresql_server` role
+''''''''''''''''''''''''''''''''''''
+
+- Fixed an issue with the ``vacuum_defer_cleanup_age`` option removal in
+  PostgreSQL 16.x resulting in failed startup of the service. The option will
+  be added only on supported PostgreSQL versions.
+
+:ref:`debops.sysctl` role
+'''''''''''''''''''''''''
+
+- The :file:`50-pid-max.conf` configuration file will be installed only on
+  platforms which support 64-bit architecture.
 
 Removed
 ~~~~~~~
@@ -124,6 +225,28 @@ General
 
 - The ``bitcoind`` role was removed due to lack of interest by the role
   maintainer.
+
+:ref:`debops.netbox` role
+'''''''''''''''''''''''''
+
+- The NAPALM integration feature found in NetBox 3.4 and before has been moved
+  to a dedicated plugin. If you want to continue using it, you will have to
+  install the plugin. All role variables about NAPALM except
+  :envvar:`netbox__napalm_ssh_generate` and
+  :envvar:`netbox__napalm_ssh_generate_bits` have been removed.
+
+Security
+~~~~~~~~
+
+:ref:`debops.icinga` role
+'''''''''''''''''''''''''
+
+- The GPG key of the Icinga upstream APT repository `has been replaced`__ on
+  30th September 2024. The role includes the new key which should be installed
+  on the host on the next run. The old GPG key will not be removed
+  automatically.
+
+  .. __: https://icinga.com/blog/2024/08/26/icinga-package-repository-key-rotation-2024/
 
 
 `debops v3.2.0`_ - 2024-09-16
