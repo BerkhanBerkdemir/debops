@@ -19,9 +19,9 @@ Here are a few services that are available
 
 **Fully loaded ready to go applications**
 
-+-----------+-----------+----------------+-------+---------------+
-| bitcoind_ | foodsoft_ | homeassistant_ | kodi_ | volkszaehler_ |
-+-----------+-----------+----------------+-------+---------------+
++-----------+----------------+-------+
+| foodsoft_ | homeassistant_ | kodi_ |
++-----------+----------------+-------+
 
 **Security**
 
@@ -51,11 +51,9 @@ Here are a few services that are available
 
 .. _tor: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/tor.yml
 
-.. _bitcoind: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/bitcoind.yml
 .. _foodsoft: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/foodsoft.yml
 .. _homeassistant: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/homeassistant.yml
 .. _kodi: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/kodi.yml
-.. _volkszaehler: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/volkszaehler.yml
 
 .. _Firejail: https://github.com/debops/debops/tree/master/ansible/debops-contrib-playbooks/service/firejail.yml
 

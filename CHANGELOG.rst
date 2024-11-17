@@ -23,6 +23,108 @@ You can read information about required changes between releases in the
 
 .. _debops master: https://github.com/debops/debops/compare/v3.2.0...master
 
+Added
+~~~~~
+
+New DebOps roles
+''''''''''''''''
+
+- The :ref:`debops.nixos` role with its corresponding playbook can be used to
+  manage NixOS-based hosts. The role is not included in the main
+  :file:`site.yml` playbook, which is focused on Debian/Ubuntu hosts.
+
+- The :ref:`debops.influxdb2` role can be used to install and configure
+  `InfluxDB v2.x`__ time-series database.
+
+  .. __: https://www.influxdata.com/products/influxdb/
+
+:ref:`debops.dovecot` role
+''''''''''''''''''''''''''
+
+- The role now supports `iterate_filter` for its LDAP configuration, allowing
+  :command:`doveadm` commands to iterate over all users. Note that you might
+  have to adjust the defaults for the :envvar:`dovecot__ldap_user_list_filter`
+  variable if you use the :envvar:`dovecot__ldap_user_filter` variable.
+
+:ref:`debops.resolved` role
+'''''''''''''''''''''''''''
+
+- The role will add a new entry in the :file:`/etc/services` database (using
+  the :ref:`debops.etc_services` role) for the ``5355`` TCP and UDP ports,
+  reserved for the `Link-Local Multicast Name Resolution`__. This should help
+  with identification of unknown TCP/UDP ports of the listening services.
+
+  .. __: https://en.wikipedia.org/wiki/Link-Local_Multicast_Name_Resolution
+
+Changed
+~~~~~~~
+
+General
+'''''''
+
+- The :ref:`debops.root_account`, :ref:`debops.system_users` and
+  :ref:`debops.users` roles are now able to handle the symlinked
+  :file:`~/.ssh/authorized_keys` files correctly using optional ``follow``
+  parameter.
+
+- The DebOps CI pipeline in GitHub Actions is improved and will be executed on
+  pull requests and pushes to test changes before merging them.
+
+:ref:`debops.gitlab_runner` role
+''''''''''''''''''''''''''''''''
+
+- The role is now compatible with GitLab 17.x and newer releases.
+
+- The runner registration method has changed, see the role documentation for
+  details.
+
+Fixed
+~~~~~
+
+General
+'''''''
+
+- The :ref:`debops.system_users` and the :ref:`debops.users` roles will add the
+  dotfiles repository cloned by the ``root`` UNIX account in the
+  :ref:`debops.yadm` role to the list of trusted :command:`git` repositories in
+  the :file:`~/.gitconfig` configuration file of each user account managed by
+  the role. This is needed to allow :command:`git` to clone local repositories
+  not owned by the UNIX account, required by the mitigation of the
+  `CVE-2022-24765`__ security vulnerability.
+
+  .. __: https://github.blog/open-source/git/git-security-vulnerability-announced/#cve-2022-24765
+
+- The :command:`debops` script will not try to download the required Ansible
+  Collections during new project creation if the :command:`ansible-galaxy`
+  command is not available in the user's ``$PATH``.
+
+:ref:`debops.apache` role
+'''''''''''''''''''''''''
+
+- Fixed an issue with the vhost ``state: "absent"`` parameter not working
+  correctly when the ``enabled: False`` parameter was not set as well.
+
+:ref:`debops.dropbear_initramfs` role
+'''''''''''''''''''''''''''''''''''''
+
+- The role now supports both the old and the new location if the initramfs
+  configuration files.
+
+Removed
+~~~~~~~
+
+General
+'''''''
+
+- The ``volkszaehler`` (``debops-contrib``) role was removed because the role
+  maintainer considers the application to be superseded by Grafana.
+  See `Future of the project; The elephant in the room – Grafana`__.
+
+  .. __: https://github.com/volkszaehler/volkszaehler.org/issues/819
+
+- The ``bitcoind`` role was removed due to lack of interest by the role
+  maintainer.
+
 
 `debops v3.2.0`_ - 2024-09-16
 -----------------------------
