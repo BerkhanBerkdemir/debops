@@ -115,7 +115,7 @@
 - name: Generate EteSync configuration
   ansible.builtin.template:
     src: 'etc/etesync-server/etesync-server.ini.j2'
-    dest: '{{ etesync__etc + "/etesync-server.ini" }}'
+    dest: '{{ etesync__etc + "/etebase-server.ini" }}'
     owner: 'root'
     group: '{{ etesync__group }}'
     mode: '0640'
@@ -126,7 +126,7 @@
 - name: Generate extended EteSync configuration
   ansible.builtin.template:
     src: 'usr/local/lib/etesync/app/etesync_site_settings.py.j2'
-    dest: '{{ etesync__git_checkout + "/etesync_site_settings.py" }}'
+    dest: '{{ etesync__git_checkout + "/etebase_server_settings.py" }}'
     owner: '{{ etesync__user }}'
     group: '{{ etesync__group }}'
     mode: '0640'
@@ -144,13 +144,23 @@
   notify: [ 'Restart gunicorn for etesync' ]
   tags: [ 'role::etesync:config' ]
 
-## -o nounset can be enabled with virtualenv >= 16.2.
-## Ref: https://github.com/pypa/virtualenv/pull/922
+- name: Collect static files like CSS and JavaScript
+  ansible.builtin.shell: |
+    source {{ etesync__virtualenv }}/bin/activate
+    python manage.py collectstatic --no-input
+  args:  # noqa no-handler
+    chdir: '{{ etesync__git_checkout }}'
+    executable: 'bash'
+  become: True
+  become_user: '{{ etesync__user }}'
+  changed_when: ("0 static files copied to" not in etesync__register_collectstatic.stdout)
+  when: etesync__register_source is changed
+  register: etesync__register_collectstatic
+
 - name: Perform database installation or migration
   ansible.builtin.shell: |
-    set -o pipefail -o errexit;
     source {{ etesync__virtualenv }}/bin/activate
-    ./manage.py migrate
+    python manage.py migrate
   args:  # noqa no-handler
     chdir: '{{ etesync__git_checkout }}'
     executable: 'bash'
@@ -170,9 +180,9 @@
     ## Ref: https://github.com/pypa/virtualenv/pull/922
     set -o pipefail -o errexit;
     source {{ etesync__virtualenv }}/bin/activate;
-    echo "from django.contrib.auth.models import User;
+    echo "from etebase_server.myauth.models import User;
           User.objects.create_superuser('${SUPERUSER_NAME}', '${SUPERUSER_EMAIL}', '${SUPERUSER_PASSWORD}')"
-    | ./manage.py shell
+    | python manage.py shell
   args:
     chdir: '{{ etesync__git_checkout }}'
     executable: 'bash'

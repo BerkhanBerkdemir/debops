@@ -89,7 +89,7 @@ etesync__home: '{{ (ansible_local.fhs.home | d("/var/local"))
 # .. envvar:: etesync__etc [[[
 #
 # Directory where the role stores EteSync configuration.
-etesync__etc: '/etc/etesync-server'
+etesync__etc: '/etc/etebase-server'
 
                                                                    # ]]]
 # .. envvar:: etesync__src [[[
@@ -130,11 +130,12 @@ etesync__git_repo: 'https://github.com/etesync/server.git'
                                                                    # ]]]
 # .. envvar:: etesync__git_version [[[
 #
-# The :command:`git` branch or tag which will be installed.
-# git commit hash lock to release 0.2.2.
+# The :command:`git` branch or tag which will be installed. git commit
+# hash lock to release 0.10.0.
+#
 # Note that this hash locking is not very effective because the main
 # implementation of EteSync is in additional Python packages.
-etesync__git_version: 'b026643cceae07b039942bf0c990ccf917eb072a'
+etesync__git_version: '4bf81f49ad2c9e5d6337f9a32e3c4aaeca610c4a'
 
 
                                                                    # ]]]
@@ -267,7 +268,8 @@ etesync__app_params:
   - '--bind={{ etesync__app_bind }}'
   - '--workers={{ etesync__app_workers }}'
   - '--timeout={{ etesync__app_timeout }}'
-  - 'etesync_server.wsgi'
+  - '--worker-class=uvicorn.workers.UvicornWorker'
+  - 'etebase_server.asgi:application'
                                                                    # ]]]
                                                                    # ]]]
 # Other variables [[[
@@ -409,7 +411,7 @@ etesync__gunicorn__dependent_applications:
 #
 # Upstream configuration for the :ref:`debops.nginx` Ansible role.
 etesync__nginx__dependent_upstreams:
-  - name: 'etesync'
+  - name: 'etesync_upstream'
     server: '{{ etesync__app_bind }}'
 
                                                                    # ]]]
@@ -442,13 +444,21 @@ etesync__nginx__dependent_servers:
 
       - pattern: '/{{ etesync__http_psk_subpath }}'
         options: |-
-          proxy_pass http://etesync;
-          proxy_set_header X-Forwarded-Host $server_name;
+          proxy_pass http://etesync_upstream;
+
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+
+          proxy_redirect off;
+          proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Host $server_name;
           {% if etesync__http_psk_subpath %}
           proxy_set_header SCRIPT_NAME /{{ etesync__http_psk_subpath }};
           {% endif %}
+
           proxy_connect_timeout {{ etesync__app_timeout }};
           proxy_send_timeout {{ etesync__app_timeout }};
           proxy_read_timeout {{ etesync__app_timeout }};
@@ -457,13 +467,21 @@ etesync__nginx__dependent_servers:
                       if (etesync__http_psk_subpath_enabled | bool)
                       else "") + "/admin" }}'
         options: |-
-          proxy_pass http://etesync;
-          proxy_set_header X-Forwarded-Host $server_name;
+          proxy_pass http://etesync_upstream;
+
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+
+          proxy_redirect off;
+          proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          {% if etesync__http_psk_subpath_enabled | bool %}
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Host $server_name;
+          {% if etesync__http_psk_subpath %}
           proxy_set_header SCRIPT_NAME /{{ etesync__http_psk_subpath }};
           {% endif %}
+
           proxy_connect_timeout {{ etesync__app_timeout }};
           proxy_send_timeout {{ etesync__app_timeout }};
           proxy_read_timeout {{ etesync__app_timeout }};
